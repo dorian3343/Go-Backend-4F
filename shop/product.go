@@ -16,14 +16,6 @@ type Product struct {
 	Name  string
 }
 
-func NewProduct(id string, price int, name string) *Product {
-	return &Product{
-		Id:    id,
-		Price: price,
-		Name:  name,
-	}
-}
-
 func (p Product) Setup(path string) error {
 	filePath := filepath.Join(path, p.Id+".json")
 
@@ -31,7 +23,11 @@ func (p Product) Setup(path string) error {
 	if err != nil {
 		return fmt.Errorf("error creating file: %v", err)
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+		}
+	}(f)
 
 	productJSON, err := json.MarshalIndent(p, "", "    ")
 	if err != nil {

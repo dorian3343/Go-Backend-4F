@@ -2,7 +2,7 @@ package handler
 
 import (
 	"backend/shop"
-	"backend/userType"
+	"backend/user-type"
 	"backend/utils"
 	"encoding/json"
 	"fmt"
@@ -27,21 +27,21 @@ func UserCreation(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Error decoding JSON", http.StatusBadRequest)
 		return
 	}
-	user, err := userType.NewUser(requestData.Login, requestData.Password, requestData.Email)
+	user, err := user_type.NewUser(requestData.Login, requestData.Password, requestData.Email)
 	if err != nil {
-		fmt.Errorf("Error adapting data-user.")
+		_ = fmt.Errorf("error adapting data-user")
 		return
 	}
 	fmt.Println(user)
 	err = user.Setup("./data-user")
 	if err != nil {
-		fmt.Errorf("Error setting up data-user.")
+		log.Printf("error setting up data-user")
 		return
 	}
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	responseUser := userType.User{
+	responseUser := user_type.User{
 		Login:  user.Login,
 		Email:  user.Email,
 		ID:     user.ID,
@@ -51,20 +51,23 @@ func UserCreation(writer http.ResponseWriter, request *http.Request) {
 
 	JSON, err := json.Marshal(responseUser)
 	if err != nil {
-		fmt.Errorf("Error returning data-user.")
+		log.Printf("error returning data-user")
 		return
 	}
 
 	_, err = writer.Write(JSON)
 	if err != nil {
-		fmt.Errorf("Error while sending response.")
+		log.Printf("error while sending response")
 		return
 	}
 
 }
 
 func UserDeletion(writer http.ResponseWriter, request *http.Request) {
-	var LoginData userType.User
+	var LoginData user_type.User
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+
 	err := json.NewDecoder(request.Body).Decode(&LoginData)
 	if err != nil {
 		log.Printf("Error decoding JSON: %s", err)
@@ -72,7 +75,7 @@ func UserDeletion(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = userType.DeleteUserData("./data-user", LoginData)
+	err = user_type.DeleteUserData("./data-user", LoginData)
 	if err != nil {
 		log.Printf("Error deleting JSON: %s", err)
 		http.Error(writer, "Error deleting user data", http.StatusNotFound)
@@ -87,39 +90,42 @@ func UserDeletion(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
 	_, err = writer.Write(jsonResponse)
 	if err != nil {
-		fmt.Errorf("Error while sending response.")
+		log.Printf("error while sending response")
 		return
 	}
 }
 
 func HandleBasketAdd(writer http.ResponseWriter, request *http.Request) {
-	var data userType.UserBasketUpdate
+	var data user_type.UserBasketUpdate
 
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
 		http.Error(writer, "Error decoding JSON", http.StatusBadRequest)
 		return
 	}
-	userDataFormat := userType.User{
+	userDataFormat := user_type.User{
 		ID:     data.ID,
 		Email:  data.Email,
 		Login:  data.Login,
 		Basket: data.Basket,
 	}
-	prod, err := shop.ExtractJSONShop("./data-shop/" + data.Product_id + ".json")
+	prod, err := shop.ExtractJSONShop("./data-shop/" + data.ProductId + ".json")
 	if err != nil {
-		fmt.Errorf(err.Error())
+		log.Printf(err.Error())
 		return
 	}
-	userDataFormat.AddToBasket(prod, "./data-user/")
+	err = userDataFormat.AddToBasket(prod, "./data-user/")
+	if err != nil {
+		return
+	}
 }
 
 func HandleUserLogin(writer http.ResponseWriter, request *http.Request) {
-	var data userType.UserLoginPrimitive
+	var data user_type.UserLoginPrimitive
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
 
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
@@ -133,9 +139,9 @@ func HandleUserLogin(writer http.ResponseWriter, request *http.Request) {
 	data.Password = C
 	possibleId, err := utils.GenerateUserID(data.Login)
 
-	user, err := userType.ExtractJSONUser("./data-user/" + possibleId + ".json")
+	user, err := user_type.ExtractJSONUser("./data-user/" + possibleId + ".json")
 	if err != nil {
-		fmt.Errorf(err.Error())
+		log.Printf(err.Error())
 		http.Error(writer, "Incorrect User Data", http.StatusUnauthorized)
 		return
 	}
@@ -144,7 +150,7 @@ func HandleUserLogin(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Incorrect User Data", http.StatusUnauthorized)
 		return
 	}
-	responseUser := userType.User{
+	responseUser := user_type.User{
 		Login:  user.Login,
 		Email:  user.Email,
 		ID:     user.ID,
@@ -155,14 +161,13 @@ func HandleUserLogin(writer http.ResponseWriter, request *http.Request) {
 	JSON, err := json.Marshal(responseUser)
 	if err != nil {
 		http.Error(writer, "Error encoding JSON", http.StatusBadRequest)
-		fmt.Errorf("Error returning data-user.")
+		log.Printf("error returning data-user")
 		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
+
 	_, err = writer.Write(JSON)
 	if err != nil {
-		fmt.Errorf("Error while sending response.")
+		log.Printf("error while sending response")
 		return
 	}
 }
@@ -170,6 +175,7 @@ func HandleUserLogin(writer http.ResponseWriter, request *http.Request) {
 func HandleProductRequest(writer http.ResponseWriter, request *http.Request) {
 	var products []shop.Product
 	folderPath := "./data-shop/"
+	writer.Header().Set("Content-Type", "application/json")
 
 	err := filepath.Walk(folderPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -199,19 +205,24 @@ func HandleProductRequest(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
+
 	_, err = writer.Write(JSON)
 	if err != nil {
-		fmt.Errorf("Error while sending response.")
+		log.Printf("error while sending response")
 		return
 	}
 }
 
 func HandleBasketRemove(writer http.ResponseWriter, request *http.Request) {
-	var data userType.UserBasketUpdate
+	var data user_type.UserBasketUpdate
+
 	err := json.NewDecoder(request.Body).Decode(&data)
 	if err != nil {
 		http.Error(writer, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+	err = data.RemoveFromBasket(data.ProductId, "./data-user/")
+	if err != nil {
 		return
 	}
 }

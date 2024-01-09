@@ -1,4 +1,4 @@
-package userType
+package user_type
 
 import (
 	"backend/shop"
@@ -9,7 +9,6 @@ import (
 	"os"
 )
 
-// base type for users, build off this
 type User struct {
 	Login    string
 	Password string
@@ -18,7 +17,6 @@ type User struct {
 	Basket   []shop.Product
 }
 
-// primitive type to marshal JSON without extra data
 type UserLoginPrimitive struct {
 	Login    string
 	Password string
@@ -26,12 +24,12 @@ type UserLoginPrimitive struct {
 
 type UserBasketUpdate struct {
 	User
-	Product_id string
+	ProductId string
 }
 
 func NewUser(login, password, email string) (User, error) {
 	if login == "" || password == "" || email == "" {
-		return User{}, errors.New("Empty login / password / email.")
+		return User{}, errors.New("empty login / password / email")
 	}
 
 	hashedPassword, err := utils.HashString(password)
@@ -39,7 +37,6 @@ func NewUser(login, password, email string) (User, error) {
 		return User{}, err
 	}
 
-	// Generate a unique ID
 	id, err := utils.GenerateUserID(login)
 	if err != nil {
 		return User{}, err
@@ -47,7 +44,7 @@ func NewUser(login, password, email string) (User, error) {
 
 	return User{
 		Login:    login,
-		Password: string(hashedPassword),
+		Password: hashedPassword,
 		Email:    email,
 		ID:       id,
 		Basket:   []shop.Product{},
@@ -55,7 +52,7 @@ func NewUser(login, password, email string) (User, error) {
 }
 
 func (u User) Setup(path string) error {
-	// Create the file
+
 	f, err := os.Create(path + "/" + u.ID + ".json")
 	if err != nil {
 		return err
@@ -67,13 +64,11 @@ func (u User) Setup(path string) error {
 		}
 	}(f)
 
-	// Marshal the entire User struct to JSON
 	userJSON, err := json.MarshalIndent(u, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	// Write the JSON data-user to the file
 	err = os.WriteFile(f.Name(), userJSON, 0644)
 	if err != nil {
 		return err
@@ -101,11 +96,11 @@ func (u User) Censor() User {
 	u.Password = ""
 	return u
 }
-func (u User) RemoveFromBasket(productToRemove shop.Product, path string) error {
-	// Find the index of the product in the basket
+
+func (u User) RemoveFromBasket(productToRemove string, path string) error {
 	index := -1
 	for i, product := range u.Basket {
-		if product.Id == productToRemove.Id {
+		if product.Id == productToRemove {
 			index = i
 			break
 		}
@@ -114,9 +109,8 @@ func (u User) RemoveFromBasket(productToRemove shop.Product, path string) error 
 	if index == -1 {
 		return fmt.Errorf("product not found in basket")
 	}
-
-	// Remove the product from the basket
 	u.Basket = append(u.Basket[:index], u.Basket[index+1:]...)
+
 	userJSON, err := json.MarshalIndent(u, "", "    ")
 	if err != nil {
 		fmt.Println(err)
@@ -132,7 +126,6 @@ func (u User) RemoveFromBasket(productToRemove shop.Product, path string) error 
 
 func DeleteUserData(path string, user User) error {
 	// Generate the same ID for the given login
-	fmt.Println(user)
 	err := os.Remove(path + "/" + user.ID + ".json")
 	if err != nil {
 		return err
@@ -142,13 +135,13 @@ func DeleteUserData(path string, user User) error {
 }
 
 func ExtractJSONUser(path string) (User, error) {
+	var data User
+
 	content, err := os.ReadFile(path)
 	if err != nil {
 		fmt.Println(err)
 		return User{}, err
 	}
-
-	var data User
 
 	err = json.Unmarshal(content, &data)
 	if err != nil {

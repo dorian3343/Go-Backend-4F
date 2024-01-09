@@ -17,6 +17,7 @@ func main() {
 	r.HandleFunc("/api/addToBasket", handler.HandleBasketAdd)
 	r.HandleFunc("/api/loginUser", handler.HandleUserLogin)
 	r.HandleFunc("/api/getProducts", handler.HandleProductRequest)
+	r.HandleFunc("/api/removeBaskets", handler.HandleBasketRemove)
 	// CORS config
 	headers := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	methods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"})
