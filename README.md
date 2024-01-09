@@ -17,3 +17,8 @@ This backend include's a simple JSON on-server database system and endpoint's fo
     3.Enter the directory of the repo.
     4.Run the command 'go run main.go'.
     5.Access it from localhost or your ip
+
+---
+
+## Doc's
+For more info read 'GUIDE.md'
