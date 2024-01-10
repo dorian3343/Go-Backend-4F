@@ -24,7 +24,7 @@ type UserLoginPrimitive struct {
 
 type UserBasketUpdate struct {
 	User
-	ProductId string
+	Product_Id string
 }
 
 func NewUser(login, password, email string) (User, error) {

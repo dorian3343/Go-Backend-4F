@@ -111,7 +111,7 @@ func HandleBasketAdd(writer http.ResponseWriter, request *http.Request) {
 		Login:  data.Login,
 		Basket: data.Basket,
 	}
-	prod, err := shop.ExtractJSONShop("./data-shop/" + data.ProductId + ".json")
+	prod, err := shop.ExtractJSONShop("./data-shop/" + data.Product_Id + ".json")
 	if err != nil {
 		log.Printf(err.Error())
 		return
@@ -221,7 +221,7 @@ func HandleBasketRemove(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Error decoding JSON", http.StatusBadRequest)
 		return
 	}
-	err = data.RemoveFromBasket(data.ProductId, "./data-user/")
+	err = data.RemoveFromBasket(data.Product_Id, "./data-user/")
 	if err != nil {
 		return
 	}
